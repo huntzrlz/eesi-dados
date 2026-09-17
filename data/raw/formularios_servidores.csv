@@ -1,0 +1,8 @@
+servidor_id,mes_referencia,secretaria_municipal,renda_liquida,despesa_basica_informada
+SRV-001,2026-08-01,Finanças,"R$ 4.500,00","1.200,00"
+SRV-002,01/08/2026,Saúde,3800.50,"R$ 1.400,00"
+SRV-003,2026/08/01,Educação,"R$ 3.200,00","900,00"
+SRV-004,2026-08-01,financas,,"1.100,00"
+SRV-005,2026-13-01,Saúde,"R$ 2.900,00","1.000,00"
+SRV-006,2026-08-01,Educação,"R$ -500,00","800,00"
+

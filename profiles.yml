@@ -1,0 +1,8 @@
+jornada_superendividamento:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/conciliacao.duckdb
+      threads: 1
+

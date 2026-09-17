@@ -1,0 +1,9 @@
+[
+  {"divida_id":"DIV-001","servidor_id":"SRV-001","credor":"Banco Horizonte","tipo_credor":"banco","saldo_devedor":"R$ 12.000,00","valor_parcela_mensal":"450,00","qtd_parcelas":"30"},
+  {"divida_id":"DIV-002","servidor_id":"SRV-001","credor":"Cartão Azul","tipo_credor":"cartão","saldo_devedor":"3.000,00","valor_parcela_mensal":"300.00","qtd_parcelas":"10"},
+  {"divida_id":"DIV-003","servidor_id":"SRV-002","credor":"Loja Central","tipo_credor":"varejo","saldo_devedor":"R$ 6.500,00","valor_parcela_mensal":"250,00","qtd_parcelas":"26"},
+  {"divida_id":"DIV-004","servidor_id":"SRV-003","credor":"Água Municipal","tipo_credor":"servico_publico","saldo_devedor":"1.200,00","valor_parcela_mensal":"100,00","qtd_parcelas":"12"},
+  {"divida_id":"DIV-004","servidor_id":"SRV-003","credor":"Água Municipal","tipo_credor":"servico_publico","saldo_devedor":"1.200,00","valor_parcela_mensal":"100,00","qtd_parcelas":"12"},
+  {"divida_id":"DIV-INVALIDA","servidor_id":"SRV-002","credor":"Teste","tipo_credor":"desconhecido","saldo_devedor":"-50,00","valor_parcela_mensal":"10,00","qtd_parcelas":"5"}
+]
+
