@@ -6,3 +6,7 @@ dbt_packages/
 data/conciliacao.duckdb
 data/bronze_delta/
 
+
+.validation/
+.user.yml
+data/conciliacao.duckdb.wal
