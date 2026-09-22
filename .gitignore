@@ -10,3 +10,6 @@ data/bronze_delta/
 .validation/
 .user.yml
 data/conciliacao.duckdb.wal
+
+.venv-clickhouse/
+.env

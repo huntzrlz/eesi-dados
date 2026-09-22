@@ -9,13 +9,13 @@ with origem as (
     -- Remove espaços externos para comparar a mesma denominação de credor.
         trim(credor) as credor,
     -- Normaliza caixa e acento para comparar o domínio de credores sem variantes gráficas.
-        case lower(trim(tipo_credor)) when 'cartão' then 'cartao' else lower(trim(tipo_credor)) end as tipo_credor,
-    -- Aceita moeda brasileira e decimal com ponto; TRY_CAST mantém erro como NULL, nunca como zero.
-        case when strpos(saldo_devedor, ',') > 0 then try_cast(replace(replace(replace(saldo_devedor, 'R$', ''), '.', ''), ',', '.') as decimal(18,2)) else try_cast(replace(replace(saldo_devedor, 'R$', ''), ' ', '') as decimal(18,2)) end as saldo_devedor,
-    -- Aceita moeda brasileira e decimal com ponto; TRY_CAST mantém erro como NULL, nunca como zero.
-        case when strpos(valor_parcela_mensal, ',') > 0 then try_cast(replace(replace(replace(valor_parcela_mensal, 'R$', ''), '.', ''), ',', '.') as decimal(18,2)) else try_cast(replace(replace(valor_parcela_mensal, 'R$', ''), ' ', '') as decimal(18,2)) end as valor_parcela_mensal,
+        case lowerUTF8(trim(tipo_credor)) when 'cartão' then 'cartao' else lowerUTF8(trim(tipo_credor)) end as tipo_credor,
+    -- Aceita moeda brasileira e decimal com ponto; Conversão tolerante mantém erro como NULL, nunca como zero.
+        {{ moeda('saldo_devedor') }} as saldo_devedor,
+    -- Aceita moeda brasileira e decimal com ponto; Conversão tolerante mantém erro como NULL, nunca como zero.
+        {{ moeda('valor_parcela_mensal') }} as valor_parcela_mensal,
     -- Tipa parcelas para uso futuro; este atributo não participa do cálculo atual de capacidade.
-        try_cast(qtd_parcelas as integer) as qtd_parcelas,
+        toInt32OrNull(qtd_parcelas) as qtd_parcelas,
         arquivo_origem, lote, capturado_em
     from origem
 )

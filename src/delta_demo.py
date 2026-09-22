@@ -1,6 +1,7 @@
 """Executa a mesma consulta SQL nos snapshots anterior e atual do Delta."""
 from pathlib import Path
-import duckdb
+from uuid import uuid4
+from src.clickhouse_client import connect, replace_arrow, identifier
 from deltalake import DeltaTable
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,12 +18,17 @@ def main() -> None:
     print("Historico:")
     for item in latest.history():
         print(f"versao {item['version']}: {item['operation']}")
-    with duckdb.connect() as connection:
-        for version in (current - 1, current):
-            connection.register("dividas_snapshot", DeltaTable(str(TABLE), version=version).to_pyarrow_table())
-            result = connection.sql(query)
-            print(f"Versao {version}: {result.columns} = {result.fetchall()}")
-            connection.unregister("dividas_snapshot")
+    # Nome exclusivo para não substituir o Bronze nem colidir com outra demonstração.
+    name = "delta_demo_" + uuid4().hex
+    query = query.replace("dividas_snapshot", identifier(name))
+    with connect() as client:
+        try:
+            for version in (current - 1, current):
+                replace_arrow(client, name, DeltaTable(str(TABLE), version=version).to_pyarrow_table())
+                result = client.query(query)
+                print(f"Versao {version}: {result.column_names} = {result.result_rows}")
+        finally:
+            client.command(f"DROP TABLE IF EXISTS {identifier(name)}")
 
 
 if __name__ == "__main__":

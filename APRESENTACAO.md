@@ -2,7 +2,7 @@
 
 ## Preparação
 
-Siga a instalação do README e execute `python run.py` com o Python da `.venv`.
+Siga a instalação do README e execute `python run.py` com o Python da `.venv-clickhouse`.
 O fluxo deve terminar sem erro. Os totais dependem dos arquivos de entrada;
 não confunda os dados ampliados locais com os dados publicados no Git.
 
@@ -22,7 +22,7 @@ não confunda os dados ampliados locais com os dados publicados no Git.
 
 ## Mostrar a DAG
 
-Na raiz, usando os executáveis da `.venv`, execute:
+Na raiz, usando os executáveis da `.venv-clickhouse`, execute:
 
 ```text
 dbt docs generate --project-dir . --profiles-dir .
@@ -51,19 +51,29 @@ Execute `python -m src.pipeline --from-delta` e depois `dbt build` para demonstr
 reconstrução a partir do bruto preservado. A apresentação ao vivo deve ser feita
 pela equipe; este roteiro e os artefatos não substituem essa etapa.
 
-## Validação realizada
+## Ambiente ClickHouse
 
-Validação local em Windows/Python 3.13, com as dependências fixadas:
+Antes da apresentação, execute `docker compose up -d --wait` e siga o README.
+Use `python -m src.query` para mostrar a consulta final sem repetir toda a carga.
+As variáveis de conexão devem ser iguais nas etapas Python e dbt.
+A demonstração usa ClickHouse 25.8.4.13 e dbt-clickhouse 1.10.3, mantendo o Delta
+para os snapshots. O arquivo antigo do banco anterior não participa da execução.
 
-- Fontes publicadas no Git: oito modelos e 15 testes dbt concluídos sem erros;
-  mesma consulta Delta retornou 6 registros na versão 0 e 7 na versão 1.
-- Cópia dos dados ampliados locais: oito modelos e 15 testes concluídos sem erros;
-  snapshots comparados retornaram 802 e 1.601 registros.
-- Teste Python de preservação, reexecução e reconstrução via Delta: aprovado.
-- `dbt docs serve`: página inicial, manifest.json e catalog.json responderam por HTTP.
-- Consulta final executada nos dois conjuntos. A exclusão de todas as duplicatas
-  removeu `DIV-004` dos fatos; o teste SQL impede sua reintrodução pela quarentena.
+## Validação da migração
 
-Os dados ampliados locais não fazem parte desta atualização de scripts e documentos.
-A CI foi configurada para repetir os testes em Windows e Linux; esta evidência
-registra a execução local, sem afirmar execução remota ou apresentação ao vivo.
+Executado em Windows/Python 3.13 contra ClickHouse 25.8.4.13 em Docker:
+
+- `pip check`: sem conflitos no ambiente novo, com requisitos fixados.
+- Dois testes Python aprovados: preservação/reprocessamento e falha de carga
+  sem perda do snapshot anterior.
+- Fontes ampliadas locais e fontes versionadas no Git: oito modelos e 16 testes
+  dbt aprovados em cada conjunto, sem erros.
+- Reconstrução `--from-delta` e novo `dbt build`: 24/24 etapas aprovadas.
+- Documentação gerada; página, manifesto ClickHouse e catálogo servidos por HTTP.
+- Time travel: SQL idêntico sobre 802/1.601 registros nas fontes ampliadas e
+  6/7 registros nas fontes do Git. Consulta final executada nos dois conjuntos.
+
+A CI Ubuntu foi atualizada para iniciar o mesmo servidor e repetir o fluxo.
+Estas evidências correspondem à validação local; a apresentação ao vivo ainda
+é responsabilidade da equipe. Os dados ampliados locais não são incluídos
+nesta atualização de scripts e documentos.

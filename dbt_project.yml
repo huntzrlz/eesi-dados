@@ -8,6 +8,8 @@ vars:
   piso_minimo_existencial: 1200
 models:
   jornada_superendividamento:
+    +engine: MergeTree()
+    +order_by: tuple()
     prepared:
       +materialized: table
     indicators:

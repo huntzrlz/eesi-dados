@@ -1,0 +1,24 @@
+name: eesi-dados
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8.4.13
+    ports:
+      - "127.0.0.1:${CLICKHOUSE_PORT:-8123}:8123"
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE:-conciliacao}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-eesi}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-eesi_local_only}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+volumes:
+  clickhouse_data:

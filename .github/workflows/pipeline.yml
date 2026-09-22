@@ -1,18 +1,22 @@
-name: Reproducao do pipeline
+name: Reproducao ClickHouse
 on: [push, pull_request]
 jobs:
   pipeline:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
           cache: pip
+      - run: docker compose up -d --wait
       - run: python -m pip install -r requirements-lock.txt
       - run: python -m pip check
       - run: python -m unittest discover -s tests -p "test_*.py"
       - run: python run.py
+      - run: python -m src.pipeline --from-delta
+      - run: dbt build --project-dir . --profiles-dir .
+      - if: always()
+        run: docker compose logs --tail 100
+      - if: always()
+        run: docker compose down

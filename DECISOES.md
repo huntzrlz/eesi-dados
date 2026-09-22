@@ -21,8 +21,9 @@ Renda nula, zero ou negativa; datas impossíveis; IDs ausentes; saldo ou parcela
 
 Adotamos as funções do Medallion com quatro etapas: Originais (Bronze),
 Preparados (Silver), Indicadores e Consumo (Gold). Delta Lake no bruto permite
-consultar snapshots anteriores sem Spark; DuckDB integra os dados locais ao dbt
-sem servidor. Esta arquitetura é adequada à PoC local, sem requisito de escrita
+consultar snapshots anteriores sem Spark; ClickHouse executa as transformações e consultas analíticas em servidor
+colunar, conectado ao dbt pelo adaptador dbt-clickhouse. O Compose fornece um
+servidor local reproduzível com armazenamento persistente. Esta arquitetura é adequada à PoC local, sem requisito de escrita
 concorrente distribuída. As fontes são formulários CSV e lotes de dívidas JSON.
 
 Escolhemos uma tabela larga agregada para consumo, em vez de esquema estrela:
@@ -71,8 +72,37 @@ reexecutar, os snapshots antigos continuam consultáveis. Não usamos VACUUM.
 A versão anterior à atual contém o lote 01 da captura e a atual os dois lotes.
 A consulta de demonstração é idêntica nos dois snapshots.
 
-`python -m src.pipeline --from-delta` reconstrói o Bronze DuckDB sem reler as
+`python -m src.pipeline --from-delta` reconstrói o Bronze ClickHouse sem reler as
 fontes. Em seguida, `dbt build` reconstrói as camadas derivadas. Não há transação
 conjunta entre as duas tabelas Delta: em caso de interrupção da captura, ela deve
 ser repetida antes do consumo. CSV/JSON preservam o arquivo original; Delta
 preserva os valores e metadados, não a formatação textual do arquivo.
+
+## Migração para ClickHouse
+
+ClickHouse substitui o banco analítico anterior nas etapas de carga, dbt,
+consulta e demonstração. Delta continua sendo a camada de preservação histórica;
+o formato dos dados brutos não foi alterado. Não há dependência de DuckDB nos
+scripts ou requisitos atuais. Arquivos antigos desse banco podem permanecer
+localmente, mas não são usados pelo pipeline.
+
+Fixamos o servidor 25.8.4.13 e dbt-clickhouse 1.10.3. Usamos HTTP via
+clickhouse-connect no Python e no perfil dbt. As mesmas variáveis de ambiente
+selecionam servidor, usuário e banco em ambos. O schema do perfil dbt corresponde
+ao database ClickHouse. As tabelas são MergeTree com ordenação `tuple()` nesta
+PoC pequena; otimização de chaves por consulta fica fora deste exercício.
+
+A carga Bronze usa Nullable(String) para preservar texto e ausências sem regra
+financeira. Primeiro carrega uma tabela intermediária; depois EXCHANGE TABLES
+publica o snapshot atomicamente em banco Atomic. Não há transação entre tabelas;
+a carga e o dbt devem ser executados sequencialmente por banco.
+
+Moedas são convertidas por `toDecimal64OrNull`, com duas casas decimais. Datas
+usam `parseDateTimeOrNull` e comparação de ida e volta para rejeitar normalização
+de datas impossíveis. Funções UTF-8 preservam a padronização de acentos.
+Saldos continuam Decimal; percentuais e rateio usam Float64 para evitar overflow
+na multiplicação de valores decimais. O teste de capacidade tolera um centavo.
+
+O time travel lê dois snapshots Delta com deltalake e executa o mesmo SQL sobre
+uma tabela auxiliar ClickHouse exclusiva, removida no final. Isso preserva a
+origem e dispensa Spark ou outro motor SQL.

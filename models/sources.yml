@@ -1,7 +1,7 @@
 version: 2
 sources:
   - name: bronze
-    schema: main
+    schema: "{{ env_var('CLICKHOUSE_DATABASE', 'conciliacao') }}"
     tables:
       - name: bronze_formularios
       - name: bronze_dividas
