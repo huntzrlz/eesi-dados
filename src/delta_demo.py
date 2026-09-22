@@ -1,22 +1,29 @@
-"""Demonstra time travel na tabela Delta de dívidas."""
+"""Executa a mesma consulta SQL nos snapshots anterior e atual do Delta."""
 from pathlib import Path
-
+import duckdb
 from deltalake import DeltaTable
 
-TABLE = Path(__file__).resolve().parents[1] / "data" / "bronze_delta" / "dividas"
+ROOT = Path(__file__).resolve().parents[1]
+TABLE = ROOT / "data" / "bronze_delta" / "dividas"
 
 
 def main() -> None:
     latest = DeltaTable(str(TABLE))
-    print("Histórico:")
+    current = latest.version()
+    if current < 1:
+        raise SystemExit("Execute python -m src.pipeline para registrar pelo menos duas versoes.")
+    query = (ROOT / "sql" / "time_travel.sql").read_text(encoding="utf-8")
+    print("Consulta identica nas duas versoes:\n" + query)
+    print("Historico:")
     for item in latest.history():
-        print(f"versão {item['version']}: {item['operation']}")
-    for version in (0, 1):
-        rows = DeltaTable(str(TABLE), version=version).to_pyarrow_table().to_pylist()
-        ids = {row["divida_id"] for row in rows}
-        print(f"Versão {version}: {len(rows)} registros; REC-TIME-TRAVEL presente = {'REC-TIME-TRAVEL' in ids}")
+        print(f"versao {item['version']}: {item['operation']}")
+    with duckdb.connect() as connection:
+        for version in (current - 1, current):
+            connection.register("dividas_snapshot", DeltaTable(str(TABLE), version=version).to_pyarrow_table())
+            result = connection.sql(query)
+            print(f"Versao {version}: {result.columns} = {result.fetchall()}")
+            connection.unregister("dividas_snapshot")
 
 
 if __name__ == "__main__":
     main()
-

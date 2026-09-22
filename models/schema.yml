@@ -8,14 +8,16 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_formularios')
-              field: servidor_id
+              arguments:
+                to: ref('stg_formularios')
+                field: servidor_id
       - name: mes_referencia
         tests: [not_null]
       - name: tipo_credor
         tests:
           - accepted_values:
-              values: ['banco', 'cartao', 'varejo', 'servico_publico']
+              arguments:
+                values: ['banco', 'cartao', 'varejo', 'servico_publico']
   - name: int_servidor_mes
     columns:
       - name: servidor_id
@@ -23,7 +25,8 @@ models:
       - name: faixa_comprometimento
         tests:
           - accepted_values:
-              values: ['0-20%', '20-40%', '40-60%', 'acima de 60%']
+              arguments:
+                values: ['0-20%', '20-40%', '40-60%', 'acima de 60%']
       - name: capacidade_pagamento
         tests: [not_null]
   - name: resumo_proposta_quitacao
@@ -33,7 +36,8 @@ models:
       - name: secretaria_municipal
         tests:
           - accepted_values:
-              values: ['FINANCAS', 'SAUDE', 'EDUCACAO']
+              arguments:
+                values: ['FINANCAS', 'SAUDE', 'EDUCACAO']
       - name: parcela_mensal_sugerida_total
         tests: [not_null]
 

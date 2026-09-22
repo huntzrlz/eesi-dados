@@ -46,8 +46,10 @@ a partir do script, mesmo quando chamado por caminho absoluto de outra pasta.
 `requirements.txt` fixa dependências diretas; `requirements-lock.txt` fixa também
 as transitivas usadas na validação. Use o lock para reproduzir o ambiente.
 
-Cada execução recria `data/bronze_delta/` a partir das fontes sintéticas e atualiza
-`data/conciliacao.duckdb`. Os resultados são locais e não devem ser versionados.
+Cada execução registra novos snapshots em `data/bronze_delta/` e atualiza
+`data/conciliacao.duckdb`. O histórico anterior é preservado; o snapshot atual
+não acumula duplicações entre execuções. Os resultados são locais e não devem
+ser versionados. Não apague os arquivos Delta nem execute VACUUM antes da apresentação.
 Feche outras conexões ao DuckDB antes de executar novamente.
 
 ## Etapas individuais
@@ -70,7 +72,10 @@ Demonstração Delta Lake e time travel:
 .\.venv\Scripts\python.exe -m src.delta_demo
 ```
 
-A versão 0 não contém `REC-TIME-TRAVEL`; a versão 1 contém.
+O script executa o mesmo SQL de `sql/time_travel.sql` na versão anterior e na
+atual. Na primeira execução, são as versões 0 e 1; nas seguintes, os números
+aumentam. O snapshot anterior contém o lote 01; o atual contém os dois lotes.
+O registro `REC-TIME-TRAVEL` aparece somente no segundo lote.
 
 Consulta final:
 
@@ -93,8 +98,9 @@ data/raw -> Dados Originais em Delta -> Dados Preparados no dbt -> Indicadores -
 
 As fontes incluem moeda em formatos diferentes, renda vazia ou negativa, data
 inválida, secretaria com grafia variável, dívida negativa, credor fora do domínio
-e ID duplicado. Esses defeitos deliberados permanecem nos Dados Originais e
-seguem para quarentena durante a preparação.
+e ID duplicado. Os defeitos permanecem nos Dados Originais. Variações de formato são
+normalizadas; registros inválidos e todas as ocorrências de IDs de dívida
+duplicados seguem para quarentena e ficam fora do consumo.
 
 ```text
 bronze_formularios -> stg_formularios -> fct_divida_servidor -> int_servidor_mes -> int_divida_com_proposta -> resumo_proposta_quitacao
@@ -102,3 +108,32 @@ bronze_dividas     -> stg_dividas     -> fct_divida_servidor
 stg_formularios -> quarentena_formularios
 stg_dividas     -> quarentena_dividas
 ```
+
+## Reprocessamento do bruto preservado
+
+Para reconstruir as tabelas Bronze do DuckDB sem reler CSV/JSON nem gerar novos
+commits Delta, execute na raiz:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.pipeline --from-delta
+.\.venv\Scripts\dbt.exe build --project-dir . --profiles-dir .
+```
+
+Os arquivos originais ficam em `data/raw/`; Delta preserva os valores capturados,
+inclusive defeitos, mais metadados técnicos. O reprocessamento usa o snapshot
+atual de cada tabela Delta. A captura das duas tabelas não é uma transação única;
+se for interrompida, execute a ingestão novamente antes de reconstruir o consumo.
+
+## Verificação e apresentação
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"
+```
+
+O `dbt build` executa os 13 testes de `models/schema.yml` (quatro tipos) e dois
+testes SQL adicionais: ausência de dívidas em quarentena nos fatos e respeito
+à capacidade de pagamento. Os testes Python verificam a preservação do bruto,
+o histórico entre reexecuções e o reprocessamento sem acesso às fontes.
+
+Veja [DECISOES.md](DECISOES.md) para as regras e
+[APRESENTACAO.md](APRESENTACAO.md) para demonstrar os nove requisitos.
