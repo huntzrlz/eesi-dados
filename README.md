@@ -4,11 +4,15 @@ Pipeline para analisar superendividamento de servidores municipais com dados sin
 Por secretaria, faixa de comprometimento e tipo de credor, calcula dívida total,
 comprometimento médio e parcela mensal sugerida respeitando o piso da PoC.
 
-## Localização do projeto dbt
+## Transformação e enriquecimento dos dados
 
-O projeto dbt está **na raiz do repositório**, junto de `dbt_project.yml`,
-`profiles.yml` e `models/`. A instrução `cd transformacao_dbt` não se aplica
-à estrutura atual. Não crie essa pasta: execute os comandos na raiz `eesi-dados`.
+A transformação é realizada pelo dbt, com os modelos SQL organizados em
+`models/`. Esses modelos fazem a limpeza, o cruzamento dos dados e o cálculo
+dos indicadores.
+
+A configuração do dbt (`dbt_project.yml` e `profiles.yml`) fica na raiz do
+repositório. Execute os comandos apresentados a seguir dentro da pasta
+`eesi-dados`.
 
 ## Execução em clone limpo
 
